@@ -1,0 +1,64 @@
+#!/bin/sh
+set -x
+ Input GCM data required for generating BCSD
+#Unified naming: gcm.nc
+
+
+
+work_DIR=$1
+data_DIR=$2
+OUTPUT_DIR=$3
+gcm_DIR=$4
+range=$5
+#range=100,120,25,45
+GCM_name=$6
+ssp=$7
+
+
+cd ${data_DIR}
+rm tmp*.nc shan*.nc 
+
+# GCM
+#cdo splityear ${gcm_DIR}/pr_day_${GCM_name}_historical_r1i1p1f1_gn_18500101-20141231.nc tmp_gcm_
+                             
+#cdo splityear ${gcm_DIR}/pr_day_${GCM_name}_ssp126_r1i1p1f1_gn_20150101-21001231.nc tmp_gcm_
+cdo splityear ${gcm_DIR}/pr_day*${GCM_name}*historical*.nc tmp_gcm_
+cdo splityear ${gcm_DIR}/pr_day*${GCM_name}*${ssp}*.nc tmp_gcm_
+
+for nn in {1961..2030} ;do
+cdo mulc,86400.0 tmp_gcm_${nn}.nc shan_gcm_${nn}.nc
+done
+rm tmp_*.nc
+cdo mergetime shan_gcm_*.nc gcm_tmp.nc
+cdo sellonlatbox,${range} gcm_tmp.nc gcm_0.nc
+
+rm  gcm_tmp.nc
+
+##########
+cdo setname,PRECTOTLAND gcm_0.nc gcm.nc
+
+
+#rm gcm_0.nc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

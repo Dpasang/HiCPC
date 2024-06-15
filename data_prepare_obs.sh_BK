@@ -1,0 +1,116 @@
+#!/bin/sh
+set -x
+
+
+#Generate the input observation data required for BCSD, named: obs_cn051.nc (set to 0 after 2021 for use in bcsd program)
+#obs_cn051_9999.nc (set to -9999 after 2021 for use in post-processing and plotting)
+
+work_DIR=$1
+data_DIR=$2
+OUTPUT_DIR=$3
+obs_DIR=$4
+range=$5
+GCM_name=$6
+#begyear=$7
+
+#range=100,120,25,45
+#work_DIR=/home/ninglk/yhh/BCSD/bcsd-python-master
+#data_DIR=${work_DIR}/data
+#obs_DIR=/data/ninglk/CMFD/prec-cmfd-1d-010deg-1979-2018.nc
+#OUTPUT_DIR=${work_DIR}/data
+#OUTPUT_DIR=/home/ninglk/yhh/BCSD/OUTPUT/${GCM_name}
+
+
+cd ${data_DIR}
+rm tmp*.nc shan*.nc
+
+######obs######
+cdo sellonlatbox,${range} ${obs_DIR} tmp00.nc
+cdo setname,ppt tmp00.nc tmp01.nc
+cdo selvar,ppt tmp01.nc tmp02.nc
+cdo -b F32 copy tmp02.nc tmp11.nc
+cdo setmissval,-9999 tmp11.nc tmp2.nc
+cdo mulc,24.0 tmp2.nc obs_0.nc
+
+mv obs_0.nc ${data_DIR}
+rm tmp*nc
+########################
+
+
+##
+if [ ! -d ${data_DIR}/shan ];then
+  mkdir -p ${data_DIR}/shan
+fi
+
+cd ${data_DIR}/shan
+  rm *.nc
+
+cdo splityear ../obs_0.nc ttmp_
+cdo mulc,0.0 ttmp_1961.nc cn051_1year.nc # 0.0
+cdo subc,9999 cn051_1year.nc cn051_1year_9999.nc  # -9999
+rm ttmp_*.nc
+
+ for nn in {2022..2031} ;do
+  cdo setyear,${nn} cn051_1year.nc tmp_${nn}.nc
+ done
+  cdo mergetime ../obs_0.nc tmp_*.nc obs_1.nc
+ rm tmp*nc
+
+ 
+ for nn in {2022..2031} ;do
+  cdo setyear,${nn} cn051_1year_9999.nc tmp_${nn}.nc
+ done
+  cdo mergetime ../obs_0.nc tmp_*.nc obs_1_9999.nc
+ rm tmp*nc
+
+
+
+#
+cdo settaxis,1961-01-01,12:00:00,1day obs_1.nc obs00.nc
+cdo splityear obs00.nc tmp_
+for nn in {1961..2030} ;do
+mv tmp_${nn}.nc shan_o_${nn}.nc
+done
+rm tmp_*.nc
+cdo mergetime shan_o_*.nc obs_2.nc
+rm shan_o_*.nc
+#
+cdo settaxis,1961-01-01,12:00:00,1day obs_1_9999.nc obs00_9999.nc
+cdo splityear obs00_9999.nc tmp_
+for nn in {1961..2030} ;do
+mv tmp_${nn}.nc shan_${nn}.nc
+done
+rm tmp_*.nc
+cdo mergetime shan_*.nc obs_2_9999.nc
+rm shan_*.nc
+
+########
+#cdo setname,ppt obs_2.nc ${data_DIR}/obs_cn051.nc
+#cdo setname,ppt obs_2_9999.nc ${data_DIR}/obs_cn051_9999.nc
+cp obs_2.nc ${data_DIR}/obs_cn051.nc
+cp obs_2_9999.nc ${data_DIR}/obs_cn051_9999.nc
+
+rm  obs_1.nc gcm_0.nc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
